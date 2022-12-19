@@ -91,6 +91,17 @@ function App() {
     setAnswer(value);
   };
 
+  const handleDeleteCalc = () => {
+    const index = !!command ? 1 : 0;
+    const currentValue = numberArray[index];
+    const nextValue = currentValue.substring(0, currentValue.length - 1);
+
+    numberArray[index] = nextValue || "0";
+
+    setNumberArray(() => [...numberArray]);
+    showCurrentAnswer(numberArray[0], numberArray[1], command);
+  };
+
   return (
     <div className="App">
       <header className="result">{answer}</header>
@@ -99,7 +110,9 @@ function App() {
           <button className="button row-container" onClick={handleClearCalc}>
             C
           </button>
-          <button className="button row-container">DEL</button>
+          <button className="button row-container" onClick={handleDeleteCalc}>
+            DEL
+          </button>
           <button
             className="button row-container"
             onClick={handleCommandClick("÷")}
