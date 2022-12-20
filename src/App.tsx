@@ -1,105 +1,112 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import "./App.css";
 
+enum CALC_SIGN {
+  ADD = "+",
+  SUBTRACT = "-",
+  MULTIPLY = "×",
+  DIVIDED = "÷",
+  EMPTY = "",
+}
+
+const calcResult = (
+  columnA: string,
+  columnB: string,
+  command: CALC_SIGN
+): string => {
+  if (!columnA && !columnB) return "";
+  else if (!columnB) return columnA + " " + command;
+
+  let result = "";
+  const numberA = Number(columnA);
+  const numberB = Number(columnB);
+
+  switch (command) {
+    case CALC_SIGN.ADD:
+      result = (numberA + numberB).toString();
+      break;
+    case CALC_SIGN.SUBTRACT:
+      result = (numberA - numberB).toString();
+      break;
+    case CALC_SIGN.MULTIPLY:
+      result = (numberA * numberB).toString();
+      break;
+    case CALC_SIGN.DIVIDED:
+      result = (numberA / numberB).toString();
+      break;
+  }
+
+  return result;
+};
+
+const showExpression = (
+  columnA: string,
+  columnB: string,
+  command: string
+): string => {
+  return !!command ? columnA + command + columnB : columnA;
+};
+
+const getCurrentCursor = (command: CALC_SIGN): number =>
+  command === CALC_SIGN.EMPTY ? 0 : 1;
+
 function App() {
-  const [numberArray, setNumberArray] = useState<string[]>(["", ""]);
-  const [command, setCommand] = useState<string>("");
+  const columns = useRef<string[]>(["", ""]);
+  const command = useRef<CALC_SIGN>(CALC_SIGN.EMPTY);
+
   const [answer, setAnswer] = useState<string>("0");
 
-  const showCurrentAnswer = (
-    number1: string,
-    number2: string,
-    command: string
-  ) => {
-    const value = !!command ? number1 + command + number2 : number1;
-
-    setAnswer(() => value);
-  };
-
   const handleNumberClick = (value: string) => () => {
-    const index = !!command ? 1 : 0;
-    const currentValue = numberArray[index];
-    const nextValue = currentValue + value;
+    const cursor = getCurrentCursor(command.current);
+    const currentColumnValue = columns.current[cursor];
 
-    numberArray[index] = nextValue;
+    const nextValue = currentColumnValue + value;
 
-    setNumberArray(() => [...numberArray]);
-    showCurrentAnswer(numberArray[0], numberArray[1], command);
-  };
+    columns.current[cursor] = nextValue;
 
-  const handleCommandClick = (currentCommand: string) => () => {
-    let number1 = "";
-    let number2 = "";
+    const result = showExpression(
+      columns.current[0],
+      columns.current[1],
+      command.current
+    );
 
-    if (!!command) {
-      const numberA = Number(numberArray[0]);
-      const numberB = Number(numberArray[1]);
-
-      switch (command) {
-        case "÷":
-          number1 = (numberA / numberB).toString();
-          break;
-        case "+":
-          number1 = (numberA + numberB).toString();
-          break;
-        case "-":
-          number1 = (numberA - numberB).toString();
-          break;
-        case "×":
-          number1 = (numberA * numberB).toString();
-          break;
-      }
-    } else {
-      number1 = numberArray[0];
-      number2 = numberArray[1];
-    }
-
-    setCommand(() => currentCommand);
-    setNumberArray(() => [number1, number2]);
-    showCurrentAnswer(number1, number2, currentCommand);
+    setAnswer(() => result);
   };
 
   const handleClearCalc = () => {
-    setCommand("");
-    setNumberArray(["", ""]);
+    command.current = CALC_SIGN.EMPTY;
+    columns.current = ["", ""];
     setAnswer("0");
   };
 
-  const handleCalcAns = () => {
-    let value = "";
+  const handleCalcAns = (currentCommand: CALC_SIGN) => () => {
+    const result = calcResult(
+      columns.current[0],
+      columns.current[1],
+      command.current
+    );
 
-    const numberA = Number(numberArray[0]);
-    const numberB = Number(numberArray[1]);
-
-    switch (command) {
-      case "÷":
-        value = (numberA / numberB).toString();
-        break;
-      case "+":
-        value = (numberA + numberB).toString();
-        break;
-      case "-":
-        value = (numberA - numberB).toString();
-        break;
-      case "×":
-        value = (numberA * numberB).toString();
-        break;
-    }
-
-    setCommand("");
-    setNumberArray([value, ""]);
-    setAnswer(value);
+    command.current = currentCommand;
+    columns.current = [result, ""];
+    setAnswer(() => result + command.current);
   };
 
   const handleDeleteCalc = () => {
-    const index = !!command ? 1 : 0;
-    const currentValue = numberArray[index];
-    const nextValue = currentValue.substring(0, currentValue.length - 1);
+    const cursor = getCurrentCursor(command.current);
+    const currentColumnValue = columns.current[cursor];
+    const nextColumnValue = currentColumnValue.substring(
+      0,
+      currentColumnValue.length - 1
+    );
+    columns.current[cursor] = nextColumnValue;
 
-    numberArray[index] = nextValue || "0";
+    const result = showExpression(
+      columns.current[0],
+      columns.current[1],
+      command.current
+    );
 
-    setNumberArray(() => [...numberArray]);
-    showCurrentAnswer(numberArray[0], numberArray[1], command);
+    setAnswer(() => result);
   };
 
   return (
@@ -115,9 +122,9 @@ function App() {
           </button>
           <button
             className="button row-container"
-            onClick={handleCommandClick("÷")}
+            onClick={handleCalcAns(CALC_SIGN.DIVIDED)}
           >
-            ÷
+            {CALC_SIGN.DIVIDED}
           </button>
           <button
             className="button row-container"
@@ -189,25 +196,25 @@ function App() {
         <div className="rightSide">
           <button
             className="button col-container"
-            onClick={handleCommandClick("×")}
+            onClick={handleCalcAns(CALC_SIGN.MULTIPLY)}
           >
-            ×
+            {CALC_SIGN.MULTIPLY}
           </button>
           <button
             className="button col-container"
-            onClick={handleCommandClick("-")}
+            onClick={handleCalcAns(CALC_SIGN.SUBTRACT)}
           >
-            -
+            {CALC_SIGN.SUBTRACT}
           </button>
           <button
             className="button col-container"
-            onClick={handleCommandClick("+")}
+            onClick={handleCalcAns(CALC_SIGN.ADD)}
           >
-            +
+            {CALC_SIGN.ADD}
           </button>
           <button
             className="button col-container two-col"
-            onClick={handleCalcAns}
+            onClick={handleCalcAns(CALC_SIGN.EMPTY)}
           >
             =
           </button>
